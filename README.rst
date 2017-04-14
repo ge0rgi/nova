@@ -1,11 +1,7 @@
-========================
-Team and repository tags
-========================
+OpenStack Nova fork for my Master thesis at FHV_.
 
-.. image:: http://governance.openstack.org/badges/nova.svg
-    :target: http://governance.openstack.org/reference/tags/index.html
+.. _FHV: http://fhv.at 
 
-.. Change things from this point on
 
 OpenStack Nova
 ==============
