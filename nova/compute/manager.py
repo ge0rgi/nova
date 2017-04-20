@@ -101,6 +101,7 @@ from nova.virt import storage_users
 from nova.virt import virtapi
 from nova.volume import cinder
 from nova.volume import encryptors
+from nova.scheduler.filters.trusted_filter import ComputeAttestation
 
 CONF = nova.conf.CONF
 
@@ -541,6 +542,8 @@ class ComputeManager(manager.Manager):
         self.driver = driver.load_compute_driver(self.virtapi, compute_driver)
         self.use_legacy_block_device_info = \
                             self.driver.need_legacy_block_device_info
+        if CONF.trusted_computing:
+            self.compute_attestation = ComputeAttestation()
 
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
@@ -2530,6 +2533,17 @@ class ComputeManager(manager.Manager):
     def start_instance(self, context, instance):
         """Starting an instance on this host."""
         self._notify_about_instance_usage(context, instance, "power_on.start")
+
+        has_trust_metadata = "trust:trusted_host" in instance.flavor.extra_specs
+        is_trusted = False
+        if has_trust_metadata:
+            is_trusted = self.compute_attestation.is_trusted(instance.host,
+                                                             instance.flavor.extra_specs["trust:trusted_host"])
+        is_valid_host = (not has_trust_metadata) or (has_trust_metadata and is_trusted)
+        if not is_valid_host:
+            LOG.error(_LE("Host trust status does not match trust metdata. Instance not started"))
+            raise exception.NoValidHost("Host trust status does not match trust metadata")
+
         compute_utils.notify_about_instance_action(context, instance,
             self.host, action=fields.NotificationAction.POWER_ON,
             phase=fields.NotificationPhase.START)
@@ -2544,7 +2558,7 @@ class ComputeManager(manager.Manager):
             self._delete_snapshot_of_shelved_instance(context, instance,
                                                       snapshot_id)
 
-        # Delete system_metadata for a shelved instance
+            # Delete system_metadata for a shelved instance
         compute_utils.remove_shelved_keys_from_system_metadata(instance)
 
         instance.save(expected_task_state=task_states.POWERING_ON)
@@ -2552,6 +2566,8 @@ class ComputeManager(manager.Manager):
         compute_utils.notify_about_instance_action(context, instance,
             self.host, action=fields.NotificationAction.POWER_ON,
             phase=fields.NotificationPhase.END)
+
+
 
     @messaging.expected_exceptions(NotImplementedError,
                                    exception.TriggerCrashDumpNotSupported,
