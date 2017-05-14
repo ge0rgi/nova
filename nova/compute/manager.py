@@ -2541,7 +2541,7 @@ class ComputeManager(manager.Manager):
                                                              instance.flavor.extra_specs["trust:trusted_host"])
         is_valid_host = (not has_trust_metadata) or (has_trust_metadata and is_trusted)
         if not is_valid_host:
-            LOG.error(_LE("Host trust status does not match trust metdata. Instance not started"))
+            LOG.error(_LE("Host trust status does not match trust metadata. Instance not started"))
             raise exception.NoValidHost("Host trust status does not match trust metadata")
 
         compute_utils.notify_about_instance_action(context, instance,
