@@ -1,4 +1,5 @@
 #    Copyright 2012 IBM Corp.
+#    Copyright 2017 Georgi Georgiev
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -13,6 +14,7 @@
 #    under the License.
 
 """Handles all requests to the conductor service."""
+# ge0rgi: Added  get_volumes_for_instance
 
 from oslo_log import log as logging
 import oslo_messaging as messaging
@@ -77,6 +79,9 @@ class API(object):
                                 'before nova-conductor?  '
                                 'Reattempting establishment of '
                                 'nova-conductor connection...'))
+
+    def get_volumes_for_instance(self, context, instance_uuid):
+        return self.conductor_compute_rpcapi.get_volumes_for_instance(context, instance_uuid)
 
 
 class ComputeTaskAPI(object):

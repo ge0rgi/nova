@@ -1,5 +1,6 @@
 #    Copyright 2013 IBM Corp.
 #    Copyright 2013 Red Hat, Inc.
+#    Copyright 2017 Georgi Georgiev
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,6 +13,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+# ge0rgi: Added  get_volumes_for_instance
 
 """Client side of the conductor RPC API."""
 
@@ -247,6 +249,14 @@ class ConductorAPI(object):
         cctxt = self.client.prepare()
         return cctxt.call(context, 'object_backport_versions', objinst=objinst,
                           object_versions=object_versions)
+
+    def get_volumes_for_instance(self, ctxt, uuid):
+        version = '3.0'
+        kw = {
+            "instance_uuid": uuid
+        }
+        cctxt = self.client.prepare(version=version)
+        return cctxt.call(ctxt, "get_volumes_for_instance", **kw)
 
 
 @profiler.trace_cls("rpc")

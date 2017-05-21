@@ -2544,6 +2544,12 @@ class ComputeManager(manager.Manager):
             LOG.error(_LE("Host trust status does not match trust metadata. Instance not started"))
             raise exception.NoValidHost("Host trust status does not match trust metadata")
 
+        bdms = self.conductor_api.conductor_rpcapi.get_volumes_for_instance(context, instance.uuid)
+        volume_ids = []
+        for mapping in bdms.objects:
+            if len(mapping.volume_id) > 0:
+                volume_ids.append(mapping.volume_id)
+
         compute_utils.notify_about_instance_action(context, instance,
             self.host, action=fields.NotificationAction.POWER_ON,
             phase=fields.NotificationPhase.START)
