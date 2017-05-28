@@ -1,6 +1,7 @@
 # Copyright 2010 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # Copyright 2011 Justin Santa Barbara
+# Copyright 2017 Georgi Georgiev
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -24,6 +25,8 @@ responding to calls to check its state, attaching persistent storage, and
 terminating it.
 
 """
+#ge0rgi: Verify host trust status on instance start when using OAT and TrustedFilter. See start_instance
+
 
 import base64
 import binascii
@@ -2534,6 +2537,7 @@ class ComputeManager(manager.Manager):
         """Starting an instance on this host."""
         self._notify_about_instance_usage(context, instance, "power_on.start")
 
+        #ge0rgi: Trust checks start
         has_trust_metadata = "trust:trusted_host" in instance.flavor.extra_specs
         is_trusted = False
         if has_trust_metadata:
@@ -2544,11 +2548,15 @@ class ComputeManager(manager.Manager):
             LOG.error(_LE("Host trust status does not match trust metadata. Instance not started"))
             raise exception.NoValidHost("Host trust status does not match trust metadata")
 
-        bdms = self.conductor_api.conductor_rpcapi.get_volumes_for_instance(context, instance.uuid)
-        volume_ids = []
-        for mapping in bdms.objects:
-            if len(mapping.volume_id) > 0:
-                volume_ids.append(mapping.volume_id)
+        if has_trust_metadata:
+            bdms = self.conductor_api.conductor_rpcapi.get_volumes_for_instance(context, instance.uuid)
+            for mapping in bdms.objects:
+                if len(mapping.volume_id) > 0:
+                    is_trusted = self.volume_api.get_volume_trust_status(context, mapping.volume_id)
+                    if not is_trusted:
+                        LOG.error(_LE("Volume %s not on trusted host. Instance not started" % mapping.volume_id))
+                        raise exception.NoValidHost("Volume %s not on trusted host" % mapping.volume_id)
+        #ge0rgi: trust checks end
 
         compute_utils.notify_about_instance_action(context, instance,
             self.host, action=fields.NotificationAction.POWER_ON,

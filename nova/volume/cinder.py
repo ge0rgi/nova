@@ -488,3 +488,6 @@ class API(object):
             {'status': status,
              'progress': '90%'}
         )
+
+    def get_volume_trust_status(self, context, volume_uuid):
+        return cinderclient(context).volumes.get_trust_status(volume_uuid)
