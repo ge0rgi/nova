@@ -1,4 +1,5 @@
 # Copyright 2014 Red Hat, Inc
+# Copyright 2017 Georgi Georgiev
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -11,6 +12,8 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+
+#ge0rgi: added meta properties for asset tag filter
 
 import copy
 
@@ -449,6 +452,9 @@ class ImageMetaProps(base.NovaObject):
         # is a fairly generic type. For a detailed type consider os_distro
         # instead
         'os_type': fields.OSTypeField(),
+        'mtwilson_trustpolicy_location': fields.StringField(),
+        'trust': fields.StringField(),
+        'asset_tags': fields.StringField(),
     }
 
     # The keys are the legacy property names and

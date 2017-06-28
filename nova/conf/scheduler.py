@@ -757,6 +757,34 @@ Related options:
 * attestation_auth_blob
 * attestation_auth_timeout
 """),
+
+cfg.StrOpt("attestation_host_url",
+            default="/OpenAttestationWebServices/V1.0",
+            help="""
+The URL on the attestation server to use for retrieving the host details.
+See the `attestation_server` help text for more information about host
+verification.
+
+This value must be just that path portion of the full URL, as it will be joined
+to the host specified in the attestation_server option.
+
+This option is only used by the FilterScheduler and its subclasses; if you use
+a different scheduler, this option has no effect. Also note that this setting
+only affects scheduling if the 'TrustedFilter' filter is enabled.
+
+* Services that use this:
+
+    ``nova-scheduler``
+
+* Related options:
+
+    attestation_server
+    attestation_server_ca_file
+    attestation_port
+    attestation_auth_blob
+    attestation_auth_timeout
+    attestation_insecure_ssl
+""")
 ]
 
 metrics_group = cfg.OptGroup(name="metrics",

@@ -1,0 +1,22 @@
+{
+  "namespace": "OS::Glance::Trust",
+  "display_name": "OpenCIT Trusted Computing",
+  "description": "Configuation options for Trust Agent and Asset Tags",
+  "visibility": "public",
+  "protected": true,
+  "resource_type_associations":[
+     {
+      "name": "OS::Glance::Image"
+     }
+   ],
+  "properties": {
+     "trust": {
+        "title": "Trust",
+        "type": "string"
+      },
+      "asset_tags": {
+        "title": "Asset Tags",
+	    "type": "string"
+      }
+   }
+}

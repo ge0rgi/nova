@@ -104,7 +104,7 @@ from nova.virt import storage_users
 from nova.virt import virtapi
 from nova.volume import cinder
 from nova.volume import encryptors
-from nova.scheduler.filters.trusted_filter import ComputeAttestation
+from nova.scheduler.filters.asset_tag_filter import TrustAssertionFilter
 
 CONF = nova.conf.CONF
 
@@ -546,7 +546,7 @@ class ComputeManager(manager.Manager):
         self.use_legacy_block_device_info = \
                             self.driver.need_legacy_block_device_info
         if CONF.trusted_computing:
-            self.compute_attestation = ComputeAttestation()
+            self.asset_tag_filter = TrustAssertionFilter()
 
     def reset(self):
         LOG.info(_LI('Reloading compute RPC API'))
@@ -2538,24 +2538,16 @@ class ComputeManager(manager.Manager):
         self._notify_about_instance_usage(context, instance, "power_on.start")
 
         #ge0rgi: Trust checks start
-        has_trust_metadata = "trust:trusted_host" in instance.flavor.extra_specs
-        is_trusted = False
-        if has_trust_metadata:
-            is_trusted = self.compute_attestation.is_trusted(instance.host,
-                                                             instance.flavor.extra_specs["trust:trusted_host"])
-        is_valid_host = (not has_trust_metadata) or (has_trust_metadata and is_trusted)
-        if not is_valid_host:
-            LOG.error(_LE("Host trust status does not match trust metadata. Instance not started"))
-            raise exception.NoValidHost("Host trust status does not match trust metadata")
-
-        if has_trust_metadata:
+        if 'trust' in instance.image_meta.properties:
+            is_trusted = self.asset_tag_filter.is_trusted(instance.host, instance.image_meta.properties.asset_tags)
+            if not is_trusted:
+                raise exception.NoValidHost("Host is not trusted")
             bdms = self.conductor_api.conductor_rpcapi.get_volumes_for_instance(context, instance.uuid)
             for mapping in bdms.objects:
                 if len(mapping.volume_id) > 0:
                     is_trusted = self.volume_api.get_volume_trust_status(context, mapping.volume_id)
                     if not is_trusted:
-                        LOG.error(_LE("Volume %s not on trusted host. Instance not started" % mapping.volume_id))
-                        raise exception.NoValidHost("Volume %s not on trusted host" % mapping.volume_id)
+                        raise exception.NoValidHost("Volume %s is not trusted" % mapping.volume_id)
         #ge0rgi: trust checks end
 
         compute_utils.notify_about_instance_action(context, instance,
