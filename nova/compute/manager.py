@@ -25,7 +25,8 @@ responding to calls to check its state, attaching persistent storage, and
 terminating it.
 
 """
-#ge0rgi: Verify host trust status on instance start when using OAT and TrustedFilter. See start_instance
+#ge0rgi: Verify host trust status on instance start when using OpenCIT and TrustAssertionFilter.
+#See _is_trusted and start_instance
 
 
 import base64
@@ -2538,16 +2539,9 @@ class ComputeManager(manager.Manager):
         self._notify_about_instance_usage(context, instance, "power_on.start")
 
         #ge0rgi: Trust checks start
-        if 'trust' in instance.image_meta.properties:
-            is_trusted = self.asset_tag_filter.is_trusted(instance.host, instance.image_meta.properties.asset_tags)
-            if not is_trusted:
-                raise exception.NoValidHost("Host is not trusted")
-            bdms = self.conductor_api.conductor_rpcapi.get_volumes_for_instance(context, instance.uuid)
-            for mapping in bdms.objects:
-                if len(mapping.volume_id) > 0:
-                    is_trusted = self.volume_api.get_volume_trust_status(context, mapping.volume_id)
-                    if not is_trusted:
-                        raise exception.NoValidHost("Volume %s is not trusted" % mapping.volume_id)
+        is_trusted =  self._is_trusted(context, instance)
+        if not is_trusted:
+            raise exception.NoValidHost("Instance host not trusted")
         #ge0rgi: trust checks end
 
         compute_utils.notify_about_instance_action(context, instance,
@@ -4242,6 +4236,13 @@ class ComputeManager(manager.Manager):
         LOG.info(_LI('Resuming'), instance=instance)
 
         self._notify_about_instance_usage(context, instance, 'resume.start')
+
+        # ge0rgi: Trust checks start
+        is_trusted = self._is_trusted(context, instance)
+        if not is_trusted:
+            raise exception.NoValidHost("Instance host not trusted")
+        # ge0rgi: trust checks end
+
         compute_utils.notify_about_instance_action(context, instance,
             self.host, action=fields.NotificationAction.RESUME,
             phase=fields.NotificationPhase.START)
@@ -7027,3 +7028,24 @@ class ComputeManager(manager.Manager):
                               error, instance=instance)
         image_meta = objects.ImageMeta.from_instance(instance)
         self.driver.unquiesce(context, instance, image_meta)
+
+
+    def _is_trusted(self, context, instance):
+        if 'trust' in instance.image_meta.properties:
+            tags = instance.image_meta.properties.get("asset_tags")
+            if tags is None:
+                tags = 'None'
+            is_trusted = self.asset_tag_filter.is_trusted(instance.host, tags)
+            if not is_trusted:
+                LOG.error("Instance host in not trusted")
+                return False
+            bdms = self.conductor_api.conductor_rpcapi.get_volumes_for_instance(context, instance.uuid)
+            for mapping in bdms.objects:
+                if len(mapping.volume_id) > 0:
+                    is_trusted = self.volume_api.get_volume_trust_status(context, mapping.volume_id)
+                    if not is_trusted:
+                        LOG.error("Volume %s is not trusted" % mapping.volume_id)
+                        return  False
+            return True
+        else:
+            return True
