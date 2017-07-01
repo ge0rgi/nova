@@ -371,10 +371,12 @@ class DriverSnapshotBlockDevice(DriverVolumeBlockDevice):
 
         if not self.volume_id:
             metadata = {}
-            if instance.image_meta.properties.trust is not None:
-                metadata["trust"] = instance.image_meta.properties.trust
-                if instance.image_meta.properties.asset_tags is not None:
-                    metadata["asset_tags"] = instance.image_meta.properties.asset_tags
+            trust = instance.image_meta.properties.get("trust")
+            if trust is not None:
+                metadata["trust"] = trust
+                tags = instance.image_meta.properties.get("asset_tags")
+                if tags is not None:
+                    metadata["asset_tags"] = tags
             av_zone = _get_volume_create_az_value(instance)
             snapshot = volume_api.get_snapshot(context,
                                                self.snapshot_id)
@@ -400,10 +402,12 @@ class DriverImageBlockDevice(DriverVolumeBlockDevice):
                virt_driver, wait_func=None, do_check_attach=True):
         if not self.volume_id:
             metadata = {}
-            if instance.image_meta.properties.trust is not None:
-                metadata["trust"] = instance.image_meta.properties.trust
-                if instance.image_meta.properties.asset_tags is not None:
-                    metadata["asset_tags"] = instance.image_meta.properties.asset_tags
+            trust = instance.image_meta.properties.get("trust")
+            if trust is not None:
+                metadata["trust"] = trust
+                tags = instance.image_meta.properties.get("asset_tags")
+                if tags is not None:
+                    metadata["asset_tags"] = tags
             av_zone = _get_volume_create_az_value(instance)
             vol = volume_api.create(context, self.volume_size,
                                     '', '', image_id=self.image_id,
