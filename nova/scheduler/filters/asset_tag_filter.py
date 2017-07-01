@@ -44,7 +44,7 @@ the Open Attestation project at:
 
     https://github.com/OpenAttestation/OpenAttestation
 """
-#ge0rgi: Fixed attestation service URL to /host-attestations?nameEqualTo= and initialized trust_verify
+#ge0rgi: Initialized trust_verify
 #ge0rgi: Added is_trusted
 
 import urllib2
@@ -179,7 +179,7 @@ class AttestationService(object):
 
         # status, data = self._request("POST", "PollHosts", hosts)
         # status, data = self._request("POST", "", host_uuid)
-        action_url = "%s/host-attestations?nameEqualTo=%s" % (self.api_url, hostname)
+        action_url = "%s?nameEqualTo=%s" % (self.api_url, hostname)
         status, data = self._request("GET", action_url, hostname)
 
         return data
@@ -294,7 +294,7 @@ class TrustAssertionFilter(filters.BaseHostFilter):
 
     def is_trusted(self, hostname, tags= None):
         try:
-            # to be called from instance manager on instance strat
+            # to be called from instance manager on instance start
             service = AttestationService()
             host_data = service.do_attestation(hostname)
             trust, asset_tag = self.verify_and_parse_saml(host_data)
