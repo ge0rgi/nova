@@ -7041,7 +7041,7 @@ class ComputeManager(manager.Manager):
                 return False
             bdms = self.conductor_api.conductor_rpcapi.get_volumes_for_instance(context, instance.uuid)
             for mapping in bdms.objects:
-                if len(mapping.volume_id) > 0:
+                if mapping.is_volume and len(mapping.volume_id) > 0:
                     is_trusted = self.volume_api.get_volume_trust_status(context, mapping.volume_id)
                     if not is_trusted:
                         LOG.error("Volume %s is not trusted" % mapping.volume_id)
